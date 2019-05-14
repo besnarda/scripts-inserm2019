@@ -1,0 +1,17 @@
+#!/bin/bash
+#$ -cwd
+#$ -j y
+#$ -N phyml_100hits
+#$ -m bea
+#$ -M alban.besnard@inserm.fr
+
+# this script need a parameter called $SAMPLE 
+# to call a parameter with qsub use the "-v" option
+# example: qsub -v "SAMPLE=383_strains.phylip" ~/scripts/phyml_100hit.pbs
+
+# environment
+. /softs/local/env/envphyml.sh
+
+# starting the job
+RUN_ID=$(basename $SAMPLE)
+phyml -i $SAMPLE -d nt -b 100 -s BEST --run_id $RUN_ID

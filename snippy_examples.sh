@@ -18,28 +18,35 @@ REF="/home/t-iris-005/0-RAW_DATA/References/Agy99_pMUM001_Hard_masked.gbff"
 
 # A lancer dans le répertoire on l'on veut créer les fichiers.
 
-for SAMPLE in $(ls /home/t-iris-005/Genomes_Cameroun/*R1.fastq); do
+for SAMPLE in $(ls /home/t-iris-005/0-RAW_DATA/Genomes_Ghana/*_R1.fastq); do
     echo $SAMPLE;
-    OUTDIR=$(basename $SAMPLE | sed 's/_R1.fastq//');
+    OUTDIR=$(basename $SAMPLE | sed 's/.fastq//');
     REF="/home/t-iris-005/0-RAW_DATA/References/Agy99_pMUM001_Hard_masked.gbff";   
     # launch snippy
-    /home/t-iris-005/snippy/bin/snippy --cpus 8 --outdir $OUTDIR --reference $REF --R1 $SAMPLE --R2 ${SAMPLE/_R1/_R2} ;
+    /home/t-iris-005/SOFTWARE/snippy/bin/snippy --cpus 8 --outdir $OUTDIR --reference $REF --R1 $SAMPLE --R2 ${SAMPLE/_R1/_R2} ;
+done
+
+for SAMPLE in $(ls /home/t-iris-005/0-RAW_DATA/Genomes_Ghana/*[0-9][0-9].fastq); do
+    echo $SAMPLE;
+    OUTDIR=$(basename $SAMPLE | sed 's/.fastq//');
+    REF="/home/t-iris-005/0-RAW_DATA/References/Agy99_pMUM001_Hard_masked.gbff";   
+    # launch snippy
+    /home/t-iris-005/SOFTWARE/snippy/bin/snippy --cpus 8 --outdir $OUTDIR --reference $REF --se $SAMPLE ;
 done
 
 
 
-
-###### STEP 3 to lauch snippy-core (need previously done snippy analysis)
+###### STEP 3 to lauch snippy-core (need previously done snippy analysis sample by sample)
 
 # !! you need to be in the folder you want the output !!
 
 # variables
-SNIPPY_FOLDERS_LIST=$(cat list_383_strains.txt)  # will give all folders in the directory
+SNIPPY_FOLDERS_LIST=$(cat list_425_strains.txt)  # will give all sample folders previously done
 REF="/home/t-iris-005/0-RAW_DATA/References/Agy99_pMUM001_Hard_masked.gbff"
-PREFIX="383_strains"
+PREFIX="425_strains"
 
 # launch snippy-core
-/home/t-iris-005/SOFTWARE/snippy/bin/snippy-core --prefix $PREFIX  $SNIPPY_FOLDERS_LIST
+/home/t-iris-005/SOFTWARE/snippy-3.2/bin/snippy-core --prefix $PREFIX  $SNIPPY_FOLDERS_LIST
 
 
 ##### some supplementary stats on snippy-core results
