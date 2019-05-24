@@ -41,9 +41,9 @@ done
 # !! you need to be in the folder you want the output !!
 
 # variables
-SNIPPY_FOLDERS_LIST=$(cat list_425_strains.txt)  # will give all sample folders previously done
+SNIPPY_FOLDERS_LIST=$(cat list_22_strains.txt)  # will give all sample folders previously done
 REF="/home/t-iris-005/0-RAW_DATA/References/Agy99_pMUM001_Hard_masked.gbff"
-PREFIX="425_strains"
+PREFIX="22_strains"
 
 # launch snippy-core
 /home/t-iris-005/SOFTWARE/snippy-3.2/bin/snippy-core --prefix $PREFIX  $SNIPPY_FOLDERS_LIST

@@ -13,5 +13,4 @@
 . /softs/local/env/envphyml.sh
 
 # starting the job
-RUN_ID=$(basename $SAMPLE)
-phyml -i $SAMPLE -d nt --run_id $RUN_ID
+phyml -i $SAMPLE -d nt --run_id fast
