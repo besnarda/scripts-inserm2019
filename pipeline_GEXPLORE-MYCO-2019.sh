@@ -116,16 +116,16 @@ CONTROL_BAM=$(ls ../02-MAPPING/*.bam | tail -4)
 macs2 callpeak -t $MYCO_BAM -c $CONTROL_BAM -f BAM -g ce -n all_bam -B -q 0.01
 
 # ICI on fait avec tous les bam dans le bon sens
-macs2 callpeak -t $MYCO_BAM -c $CONTROL_BAM -f BAM -g ce -n no_model -B -q 0.01 --nomodel --extsize 100
+macs2 callpeak -t $MYCO_BAM -c $CONTROL_BAM -f BAM -g ce -n size_200_keep_dup -B -q 0.01 --nomodel --extsize 200 --keep-dup all
 
-# ICI on fait avec tous les bam dans le bon sen
-macs2 callpeak -t $CONTROL_BAM -c $MYCO_BAM -f BAM -g ce -n back_bam -B -q 0.01
+# ICI on fait avec tous les bam dans le mauvais sens
+macs2 callpeak -t $CONTROL_BAM -c $MYCO_BAM -f BAM -g ce -n back_bam -B -q 0.01 --nomodel --extsize 200 --keep-dup all
 
 # La on fait les bam myco seuls
-macs2 callpeak -t $MYCO_BAM -f BAM -g ce -n myco_bam -B -q 0.01
+macs2 callpeak -t $MYCO_BAM -f BAM -g ce -n myco_bam -B -q 0.01 --nomodel --extsize 200 --keep-dup all
 
 # La on fait les bam control seuls
-macs2 callpeak -t $CONTROL_BAM -f BAM -g ce -n control_bam -B -q 0.01
+macs2 callpeak -t $CONTROL_BAM -f BAM -g ce -n control_bam -B -q 0.01 --nomodel --extsize 200 --keep-dup all
 
 # chaque bam myco contre l'ensemble des témoins
 for BAM in $MYCO_BAM; do 
@@ -135,13 +135,42 @@ macs2 callpeak -t $BAM -c $CONTROL_BAM -f BAM -g ce -n $indiv -B -q 0.01
 done
 
 
+#### duplicates with Picard suite (environ 1 min)
+java -jar ~/SOFTWARE/picard.jar MarkDuplicates \
+      I=S1.sorted.bam \
+      O=S1_marked_duplicates.bam \
+      M=marked_dup_metrics.txt
+
+# see general information
+samtools flagstat S1_marked_duplicates.bam
+
+# for S1 there is 1.225.019 duplicated reads (68%)
+
+# get all duplicated reads
+samtools view -f 1024 S1_marked_duplicates.bam -o S1_duplicates.bam
+samtools index S1_duplicates.bam
+
+# get the coverage
+samtools depth --skip
+bedtools genomecov -ibam S1_duplicates.bam -d > S1_dup_coverage.txt
+cat S1_dup_coverage.txt | awk '($3 >= 100) {print $0}' > S1_100filter.txt
 
 
+cat Agy99_pMUM001_Hard_masked.gbff  | grep '  tRNA  \|  CDS  '  | cut -c 21- | sed 's/ //' | sed 's/\.\./\t/' | sed 's/)//' | sed 's/^/+\t/' | sed 's/+\tcomplement(/-\t/' > tmp.txt
+cat Agy99_pMUM001_Hard_masked.gbff  | grep -A2 '  tRNA  \|  CDS  '  | grep locus_tag | cut -f2 -d '"' > tmp2.txt
+paste tmp.txt tmp2.txt > locus_file
 
+a=4000000
+b=4436391
 
+IFS=$'\n' 
+for peak in $(cat ~/GEXPLORE-MYCO-2019/03-PEAK_CALLING/myco_bam_peaks.xls | grep -v ^# | grep -v ^chr); do
+unset IFS
+mid=$(echo $peak | cut -f5 -d " ")
+echo $mid;
+cat Agy99.gff3 |  grep -v ^#  | awk -v a="$mid" '($4 < a  && $5 > a && $3 = "gene") {print $0}'
 
-
-
+done
 
 
 

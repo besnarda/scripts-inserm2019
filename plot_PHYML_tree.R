@@ -6,6 +6,8 @@
 
 ### charging libraries
 library(ggtree)  # avaible with bioconductor
+library(ape)
+library(readxl)
 
 ####################################################
 ###### tree with old sequences (184)
@@ -162,3 +164,71 @@ tree <- root(phy = tree,outgroup_name,resolve.root=T)
 tree_test <- drop.tip(tree,tip=outgroup_name)
 
 ggtree(tree_test) +theme_tree2() + geom_tiplab(size=5)
+
+####################################################
+###### tree for Benin and nigeria strains
+####################################################
+
+tree <- read.tree("/home/t-iris-005/A-GENOME_TO_TREE/3-PHYML/benin_nigeria_strains.phylip_phyml_tree_benin_nigeria_strains.txt")
+info <- read_xlsx("/home/t-iris-005/0-RAW_DATA/Summary_all_strains_2019.xlsx")
+
+# on crée un data.frame avec toutes les infos que l'on connait sur les points
+info <- data.frame(info)
+info <- merge(data.frame(tree$tip.label),info,by.x="tree.tip.label",by.y="Run")
+
+# rooting and deleting outgroup Here we use Mu_A2!
+outgroup = as.character(info[is.na(info$Lineage)==FALSE & info$Lineage == "Mu_A2","tree.tip.label"])
+
+# pour décider ce qui fait aprtie de l'outgroup!
+# tree_test <- drop.tip(tree,tip=outgroup)
+# ggtree(tree) +theme_tree2() + geom_tiplab(size=2.5)
+
+# je n'arrive pas à faire le graph avec l'ensemble des Mu_A2, on ne prend qu'un pour faire l'outgroup
+tree <- root(tree,outgroup[1],resolve.root=T)
+tree_test <- drop.tip(tree,tip=outgroup)
+
+# plot with colour depending of Country
+pdf(file="/home/t-iris-005/A-GENOME_TO_TREE/4-R_PLOT/Benin_Nigeria_country.pdf")
+
+ggtree(tree_test) %<+% info +
+  theme_tree2() +
+  geom_tiplab(size=0.8,aes(label=Isolate.number)) +
+  geom_tippoint(size =0.5,aes(color=Country))+
+  theme(legend.position="right")
+
+dev.off()
+
+# plot with colour depending of Cluster
+pdf(file="/home/t-iris-005/A-GENOME_TO_TREE/4-R_PLOT/benin_nigeria_8geno.pdf")
+
+ggtree(tree_test,aes(color=Cluster)) %<+% info +
+  theme_tree2() +
+  geom_tiplab(size=0.8,aes(label=Isolate.number)) +
+  theme(legend.position="right")
+
+dev.off()
+####################################################
+###### tree for Cameroun strains
+###################################################
+
+tree <- read.tree("/home/t-iris-005/A-GENOME_TO_TREE/3-PHYML/cameroun_strains.phylip_phyml_tree_cameroun_strains.txt")
+
+# on crée un data.frame avec toutes les infos que l'on connait sur les points
+info <- read_xlsx("/home/t-iris-005/0-RAW_DATA/Summary_all_strains_2019.xlsx")
+info <- data.frame(info)
+info <- merge(data.frame(tree$tip.label),info,by.x="tree.tip.label",by.y="Run")
+
+# rooting and deleting outgroup Here we use Mu_A2!
+outgroup = as.character(info[is.na(info$Lineage)==FALSE & info$Lineage == "Mu_A2","tree.tip.label"])
+tree <- root(tree,outgroup,resolve.root=T)
+tree_test <- drop.tip(tree,tip=outgroup)
+
+# plot with colour depending of village. (lot of village so not really easy...)
+ggtree(tree_test) %<+% info +
+  theme_tree2() +
+  geom_tiplab(size=2,aes(label=Isolate.number)) +
+  geom_tippoint(aes(color=Div3))+
+  theme(legend.position="right")
+
+
+  
