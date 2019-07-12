@@ -152,18 +152,17 @@ paste size_200_keep_dup_peaks.xls associated_gene.txt |  sed 's/ /\t/g' > size_2
 
 ### mycolactone
 
-input='myco_bam_peaks.xls'
+input='back_bam_peaks.xls'
 >associated_gene.txt
 while read LINE;do 
-    echo $LINE
     chrom=$(echo $LINE | cut -f 1 -d " " )
     if [ $chrom = "Chromosome" ]; then chrom="CP000325"; fi
     mid=$(echo $LINE | cut -f 5 -d " " )
-    tmp=$(cat Agy99.gff3 | grep $chrom | grep -P '\tgene\t|\tpseudogene\t' | awk -v a="$mid" ' {if($4 < a && $5 > a) {print $4,$5,$7,$9}}' | sed 's/ /\t/g' | head -n1)
+    tmp=$(cat ~/0-RAW_DATA/References/Agy99.gff3 | grep $chrom | grep -P '\tgene\t|\tpseudogene\t' | awk -v a="$mid" ' {if($4 < a && $5 > a) {print $4,$5,$7,$9}}' | sed 's/ /\t/g' | head -n1)
     echo $tmp >> associated_gene.txt
 done < $input
 
-paste myco_bam_peaks.xls associated_gene.txt |  sed 's/ /\t/g' > myco_peak_annotated.txt
+paste back_bam_peaks.xls associated_gene.txt |  sed 's/ /\t/g' > back_bam_peak_annotated.txt
 
 
 ### témoin
@@ -184,7 +183,7 @@ paste control_bam_peaks.xls associated_gene.txt |  sed 's/ /\t/g' > control_peak
 more myco_peak_annotated.txt | grep gene | cut -f 4 -d "-" | cut -f 1 -d ";"
 
 ####### passage du .xls au peptide d'intérêt.
-name="size_200_keep_dup"
+name="back_bam"
 # passage .xls au format .bed
 cat ${name}_peaks.xls | grep -v "#" | cut -f 1,2,3 | tail -n +3 > ${name}_annotated.bed
 
