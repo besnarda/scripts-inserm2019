@@ -9,7 +9,7 @@
 #  From a gff file and the output of MACS 2.1 (peak calling)
 #  Create an enriched file with the name of gene
 #  Possible addon: use a file with more info on genes to add on the enriched file!
-#					
+#
 #  INPUT:
 #	 - .gff file contaning the reference
 #    - .xls file output from MACS
@@ -88,7 +88,7 @@ for line in peak:
         for feature in list(db.features_of_type("gene")):
             if mid > feature.start and mid < feature.end and chro == feature.seqid:
                 print(feature.id + feature.strand)
-                
+
                 continue
 
 

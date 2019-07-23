@@ -5,12 +5,12 @@
 #-------------------------------------
 #
 #  SCRIPT PYTHON frame calculator
-#					
+#
 #  INPUT:
 #	 - start of the gene
 #  - start of your peak
 #  OUTPUT:
-#  -The frame you need to translate it correctly with transeq (EMBOSS)
+#  -The frame you need to translate with transeq (EMBOSS)
 #  					Author : Alban Besnard, albanbesnard@hotmail.fr
 #-------------------------------------
 

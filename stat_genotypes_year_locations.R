@@ -1,6 +1,7 @@
 
 library(ggplot2)
 library(ggmap)
+library(readxl)
 
 #data <- read.csv("0-RAW_DATA/Fichier_bilan_souches.csv",dec=",")
 data <- read_xlsx("/home/t-iris-005/0-RAW_DATA/Summary_all_strains_2019.xlsx")
@@ -31,12 +32,14 @@ benin_map<- get_map(location = c(lon = 2.6, lat = 6.85),
                     color = "color",
                     source = "google",
                     maptype = "terrain",
-                    zoom = 9) %>% ggmap()
+                    zoom = 8) %>% ggmap()
 
-benin_map + 
+benin_map +
+  geom_jitter(aes(y=Latitude,x=Longitude,color=Ref), data=data)
+benin_map +
   geom_jitter(aes(y=Latitude,x=Longitude,color=Cluster),data=data) +
   scale_color_manual(values=c('#1b9e77','#d95f02','#7570b3','#e7298a','#66a61e','#e6ab02','#a6761d','#666666',"blue","red"))
-benin_map + 
+benin_map +
   geom_jitter(aes(y=Latitude,x=Longitude,color=Cluster),data=data) + facet_wrap(.~Cluster)+
   scale_color_manual(values=c('#1b9e77','#d95f02','#7570b3','#e7298a','#66a61e','#e6ab02','#a6761d','#666666',"blue","red"))
 
@@ -64,6 +67,6 @@ map_cameroon <- get_map(location = c(lon = 12.2, lat = 3.8),
                          maptype = "terrain",
                          zoom = 10) %>% ggmap
 
-map_cameroon + 
+map_cameroon +
   geom_point(data=cameroon,aes(y=Latitude,x=Longitude,color=Cluster))+
   geom_label_repel(data=cameroon,aes(y=Latitude,x=Longitude,color=Cluster,label=`Isolate number`))
