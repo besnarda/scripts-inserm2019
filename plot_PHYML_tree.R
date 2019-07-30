@@ -172,6 +172,7 @@ ggtree(tree_test) +theme_tree2() + geom_tiplab(size=5)
 tree <- read.tree("/home/t-iris-005/A-GENOME_TO_TREE/3-PHYML/benin_nigeria_strains.phylip_phyml_tree_benin_nigeria_strains.txt")
 info <- read_xlsx("/home/t-iris-005/0-RAW_DATA/Summary_all_strains_2019.xlsx")
 
+
 # on crée un data.frame avec toutes les infos que l'on connait sur les points
 info <- data.frame(info)
 info <- merge(data.frame(tree$tip.label),info,by.x="tree.tip.label",by.y="Run")
@@ -184,7 +185,7 @@ outgroup = as.character(info[is.na(info$Lineage)==FALSE & info$Lineage == "Mu_A2
 # ggtree(tree) +theme_tree2() + geom_tiplab(size=2.5)
 
 # je n'arrive pas à faire le graph avec l'ensemble des Mu_A2, on ne prend qu'un pour faire l'outgroup
-tree <- root(tree,outgroup[1],resolve.root=T)
+tree <- root(tree,outgroup,resolve.root=T)
 tree_test <- drop.tip(tree,tip=outgroup)
 
 # plot with colour depending of Country
@@ -207,6 +208,30 @@ ggtree(tree_test,aes(color=Cluster)) %<+% info +
   theme(legend.position="right")
 
 dev.off()
+
+# plot with colour depending of cluster using custom colors
+unknown=as.character(info[is.na(info$Cluster)==FALSE & info$Cluster == "?","tree.tip.label"])
+tree_test2 <- drop.tip(tree_test,tip=unknown)
+info[is.na(info$Cluster)==TRUE,"Cluster"] <- "Ghana"
+
+my_color_scale = c('#1b9e77','#d95f02','#7570b3','#e7298a','#66a61e','#e6ab02','#a6761d','#666666',"darkgreen","blue")
+ 
+g <- ggtree(tree_test2,aes(color=Cluster)) %<+% info +
+  scale_color_manual(values=my_color_scale,na.value="black")+
+  geom_tippoint()+
+  theme(legend.position="right") 
+g
+ggsave(g,file="~/A-GENOME_TO_TREE/4-R_PLOT/geno1a8_kouffo.svg")
+
+### plot MU_A2
+tree <- read.tree("/home/t-iris-005/A-GENOME_TO_TREE/3-PHYML/benin_nigeria_strains.phylip_phyml_tree_benin_nigeria_strains.txt")
+outgroup = as.character(info[is.na(info$Lineage)==FALSE & info$Lineage == "Mu_A1","tree.tip.label"])
+outgroup=c(outgroup,"Reference")
+tree <- root(tree,outgroup[1],resolve.root=T)
+tree_test <- drop.tip(tree,tip=outgroup)
+ggtree(tree_test,size=5) %<+% info +
+  geom_tippoint(size=20,color="red")
+
 ####################################################
 ###### tree for Cameroun strains
 ###################################################
