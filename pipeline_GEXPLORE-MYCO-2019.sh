@@ -113,31 +113,19 @@ CONTROL_BAM=$(ls ../02-MAPPING/*.bam | head -4)
 MYCO_BAM=$(ls ../02-MAPPING/*.bam | tail -4)
 
 # ICI on fait avec tous les bam dans le bon sens
-macs2 callpeak -t $MYCO_BAM -c $CONTROL_BAM -f BAM -g ce -n all_bam -B -q 0.01
-
-# ICI on fait avec tous les bam dans le bon sens
-macs2 callpeak -t $MYCO_BAM -c $CONTROL_BAM -f BAM -g ce -n size_200_keep_dup -B -q 0.01 --nomodel --extsize 200 --keep-dup all
-
-# ICI on fait avec tous les bam dans le mauvais sens
-macs2 callpeak -t $CONTROL_BAM -c $MYCO_BAM -f BAM -g ce -n back_bam -B -q 0.01 --nomodel --extsize 200 --keep-dup all
-
-# La on fait les bam myco seuls
-macs2 callpeak -t $MYCO_BAM -f BAM -g ce -n myco_bam -B -q 0.01 --nomodel --extsize 200 --keep-dup all
-
-# La on fait les bam control seuls
-macs2 callpeak -t $CONTROL_BAM -f BAM -g ce -n control_bam -B -q 0.01 --nomodel --extsize 200 --keep-dup all
+macs2 callpeak -t $MYCO_BAM -c $CONTROL_BAM -f BAM -g ce -n myco_bam -B -q 0.001 --keep-dup all
 
 # chaque bam myco contre l'ensemble des témoins
 for BAM in $MYCO_BAM; do 
 echo $BAM;
 indiv=$(basename $BAM | cut -f 1 -d _)
-macs2 callpeak -t $BAM -c $CONTROL_BAM -f BAM -g ce -n $indiv -B -q 0.01
+macs2 callpeak -t $BAM -c $CONTROL_BAM -f BAM -g ce -n $indiv -B -q 0.01 --keep-dup all
 done
 
 
 ### mycolactone VS temoin
 
-input='size_200_keep_dup_peaks.xls'
+input='myco_bam_peaks.xls'
 >associated_gene.txt
 while read LINE;do 
     echo $LINE
@@ -148,39 +136,7 @@ while read LINE;do
     echo $tmp >> associated_gene.txt
 done < $input
 
-paste size_200_keep_dup_peaks.xls associated_gene.txt |  sed 's/ /\t/g' > size_200_keep_dup_annotated.txt
-
-### mycolactone
-
-input='back_bam_peaks.xls'
->associated_gene.txt
-while read LINE;do 
-    chrom=$(echo $LINE | cut -f 1 -d " " )
-    if [ $chrom = "Chromosome" ]; then chrom="CP000325"; fi
-    mid=$(echo $LINE | cut -f 5 -d " " )
-    tmp=$(cat ~/0-RAW_DATA/References/Agy99.gff3 | grep $chrom | grep -P '\tgene\t|\tpseudogene\t' | awk -v a="$mid" ' {if($4 < a && $5 > a) {print $4,$5,$7,$9}}' | sed 's/ /\t/g' | head -n1)
-    echo $tmp >> associated_gene.txt
-done < $input
-
-paste back_bam_peaks.xls associated_gene.txt |  sed 's/ /\t/g' > back_bam_peak_annotated.txt
-
-
-### témoin
-
-input='control_bam_peaks.xls'
->associated_gene.txt
-while read LINE;do 
-    echo $LINE
-    chrom=$(echo $LINE | cut -f 1 -d " " )
-    if [ $chrom = "Chromosome" ]; then chrom="CP000325"; fi
-    mid=$(echo $LINE | cut -f 5 -d " " )
-    tmp=$(cat ~/0-RAW_DATA/References/Agy99.gff3 | grep $chrom | grep -P '\tgene\t|\tpseudogene\t' | awk -v a="$mid" ' {if($4 < a && $5 > a) {print $4,$5,$7,$9}}' | sed 's/ /\t/g' | head -n1)
-    echo $tmp >> associated_gene.txt
-done < $input
-
-paste control_bam_peaks.xls associated_gene.txt |  sed 's/ /\t/g' > control_peak_annotated.txt
-
-more myco_peak_annotated.txt | grep gene | cut -f 4 -d "-" | cut -f 1 -d ";"
+paste myco_bam_peaks.xls associated_gene.txt |  sed 's/ /\t/g' > myco_bam_peaks.txt
 
 ####### passage du .xls au peptide d'intérêt.
 name="back_bam"
@@ -209,21 +165,6 @@ cat ${name}_prot_filtered.fasta | grep ">" | cut -f 1,2 -d _ | uniq -c | wc -l
 # combien de peptide potentiel?
 cat ${name}_prot_filtered.fasta | grep -c ">" 
 
-
-
-#-----------------------------------------------------------------------------------------
-#################### STEP 05: Analyse des peaks sur mlsA1 et mlsB     ####################
-#-----------------------------------------------------------------------------------------
-
-# peak.bed est un fichier avec le nom du gène et début et fin. 
-fastaFromBed -fi mls_prot.fasta -bed peak.bed  -fo mls_KS_AT.fasta
-
-# on observe clairement une différence entre les modules qui matchent avec la myco et les autres!
-
-#>mlsB:513-572
-#HPHRATITTSIEHHSENNHDTTDALAALHALANNGTHPLLSRGLLTPQGPGKTVFVFPG
-#>mlsB:2319-2365
-#RAVVVGADRHQLQRGLAELASGNLGADVVVGRARAAGETVMVFPGQ
 
 
 
