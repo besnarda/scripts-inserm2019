@@ -125,3 +125,5 @@ peak_enriched %>% filter(hydrophobicity !=0) %>%
   scale_color_manual(values=palette)
 
 peak_enriched %>% filter(BURUlist == '"Virulence, detoxification, adaptation"')
+
+peak_enriched %>% ggplot(aes(x=log10(pileup))) + geom_histogram()
