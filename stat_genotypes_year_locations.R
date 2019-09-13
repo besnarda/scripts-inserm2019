@@ -12,6 +12,8 @@ summary(data)
 data$Latitude <- as.numeric(data$Latitude)
 data$Longitude <- as.numeric(data$Longitude)
 
+my_color_scale = c('#1b9e77','#d95f02','#7570b3','#e7298a','#66a61e','#e6ab02','#a6761d','#666666',"darkgreen","blue")
+
 #subset Benin Nigeria
 data <- data[data$Country %in% c("Benin","Nigeria") & data$Cluster != "?",]
 ggplot(data=data,aes(x=Div1,fill=Cluster)) + geom_bar()
@@ -20,13 +22,14 @@ ggplot(data=data,aes(x=Div1,fill=Cluster)) + geom_bar()
 Benin <- c(left = 1.6, right = 4, bottom = 6.2, top = 9)
 benin_map <- get_stamenmap(Benin,maptype= "toner-lite") %>% ggmap
 
-benin_map + geom_jitter(aes(y=Latitude,x=Longitude,color=Cluster),data=data)
+benin_map + geom_jitter(aes(y=Latitude,x=Longitude,color=Cluster),data=data) +scale_color_manual(values=my_color_scale)
 
 # sans kouffo
 Benin <- c(left = 2.2, right = 2.8, bottom = 6.2, top = 7.5)
 benin_map <- get_stamenmap(Benin,maptype= "toner-lite") %>% ggmap
 
-benin_map + geom_jitter(aes(y=Latitude,x=Longitude,color=Cluster),data=data) + facet_wrap(.~Cluster)
+benin_map + geom_point(aes(y=Latitude,x=Longitude,color=Cluster),size = 2,data=data[data$Cluster %in% c("Kouffo","Mu_A2")==FALSE,]) +scale_color_manual(values=my_color_scale)
+benin_map + geom_point(aes(y=Latitude,x=Longitude,color=Cluster),size = 2,position = position_jitter(w = 0.03, h = 0.03),data=data[data$Cluster %in% c("Kouffo","Mu_A2")==FALSE,]) +scale_color_manual(values=my_color_scale)
 
 
 benin_map<- get_map(location = c(lon = 2.6, lat = 6.85),
@@ -46,7 +49,6 @@ benin_map +
 
 # plot avec juste un génogroupe et des labels
 benin_map + ggrepel::geom_label_repel(aes(y=Latitude,x=Longitude,color=Cluster,label=`Isolate number`),data=data[data$Cluster=="8",])
-
 
 #### ajout des clusters détectés par satscan!
 
