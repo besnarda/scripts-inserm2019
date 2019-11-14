@@ -47,7 +47,7 @@ cd 0-RAW_DATA
 # this takes a long time!!
 # be aware that fasterq create a cache in your ncbi folder!
 # Ask for my Summary_all_strains_2019 file containing multiple information
-# aggregated from publications over the time (mostly vandelanoote)
+# aggregated from publications over the time (mostly vandelannoote)
 
 
 # first one is for benin and nigeria from vandelannote et al. 2017 and others
@@ -70,6 +70,12 @@ done
 
 # forth is cameroun data from Bolz et al. 2015 (82 acc)
 for SRR in $(cat Run_to_fetch4.txt); do
+echo $SRR;
+~/SOFTWARE/sratoolkit.2.9.6-1-ubuntu64/bin/fasterq-dump $SRR;
+done
+
+# fifth is cameroun data from vandelanoote et al. 2017 (duplicates!)
+for SRR in $(cat Run_to_fetch5.txt); do
 echo $SRR;
 ~/SOFTWARE/sratoolkit.2.9.6-1-ubuntu64/bin/fasterq-dump $SRR;
 done
@@ -119,7 +125,7 @@ REF="/home/t-iris-005/0-RAW_DATA/References/Agy99_pMUM001_Hard_masked.gbff"
 ###### 1.2 to launch snippy for multiple data
 
 # A lancer dans le répertoire on l'on veut créer les fichiers.
-FILE_LIST=$(ls /home/t-iris-005/A-GENOME_TO_TREE/0-RAW_DATA/ERR*1.fastq.gz)
+FILE_LIST=$(ls /home/t-iris-005/A-GENOME_TO_TREE/0-RAW_DATA/SRR322406*.fastq.gz)
 for SAMPLE in $FILE_LIST; do
     echo $SAMPLE;
     OUTDIR=$(basename $SAMPLE | sed 's/_1.fastq.gz//');
@@ -136,7 +142,7 @@ done
 ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ##
 
 #-----------------------------------------------------------------------------------------
-#################### STEP 03: Get Core SNP                        ########################
+#################### STEP 02: Get Core SNP                        ########################
 #-----------------------------------------------------------------------------------------
 
 # step 0

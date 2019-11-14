@@ -2,6 +2,7 @@
 library(ggplot2)
 library(ggmap)
 library(readxl)
+library(ggrepel)
 library(ggforce)
 
 #data <- read.csv("0-RAW_DATA/Fichier_bilan_souches.csv",dec=",")
@@ -55,16 +56,12 @@ benin_map + ggrepel::geom_label_repel(aes(y=Latitude,x=Longitude,color=Cluster,l
 circles <- data.frame(lon=c(6.95,6.58,6.93,7.06),lat=c(3.51,2.55,2.27,2.62),r=c(85.36/100,10.55/100,24.83/100,18.61/100),label=c("Nigeria","Sud_oueme","Nord_oueme","Plateau"))
 benin_map + geom_circle(data=circles,aes(y0=lon,x0=lat,r=r)) +
   geom_jitter(aes(y=Latitude,x=Longitude,color=Cluster),data=data)
-#### stat sur le cameroun
 
-library(readODS)
-library(maps)
-library(mapdata)
+#########################################################
+#### map sur le cameroun
+#########################################################
 
-data<- read_ods("0-RAW_DATA/Summary_all_strains_2019.ods")
-
-data$Latitude <- as.numeric(data$Latitude)
-cameroon <- data[data$Ref =="Us_cameroun",]
+cameroon <- data[data$Country =="Cameroon" & data$Cluster!="BAPS-2" & data$Dup1_Bad2==0,]
 summary(cameroon)
 
 ### test de carte avec google map.
@@ -76,8 +73,11 @@ map_cameroon <- get_map(location = c(lon = 12.2, lat = 3.8),
                          color = "color",
                          source = "google",
                          maptype = "terrain",
-                         zoom = 10) %>% ggmap
+                         zoom = 9) %>% ggmap
 
 map_cameroon +
-  geom_point(data=cameroon,aes(y=Latitude,x=Longitude,color=Cluster))+
+  geom_point(data=cameroon,aes(y=Latitude,x=Longitude,color=as.factor(Cluster)))+
   geom_label_repel(data=cameroon,aes(y=Latitude,x=Longitude,color=Cluster,label=`Isolate number`))
+
+map_cameroon +
+  geom_jitter(data=cameroon,aes(y=Latitude,x=Longitude,color=as.factor(Cluster)))
