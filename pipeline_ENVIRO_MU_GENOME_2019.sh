@@ -114,6 +114,26 @@ samtools sort merged_15-16.bam -o merged_15-16.sorted.bam
 samtools index merged_15-16.sorted.bam
 rm merged_15-16.bam
 
+# check regions (GGGG and rRNA)
+for bam in *.bam; do
+echo $bam
+# rRNA 16S and 23S
+samtools view $bam Chromosome:4409800-4414500 | wc -l
+# "GGG" zone
+samtools view $bam Chromosome:5416810-5416870 | wc -l
+# IS1554
+samtools view $bam Chromosome:5238682-5238903 | wc -l
+# IS2606
+samtools view $bam Chromosome:3917668-3917709 | wc -l
+# pseudogène (unknown function)
+samtools view $bam Chromosome:2349528-2349795 | wc -l
+# Is2404
+samtools view $bam Chromosome:1092155-1092454 | wc -l
+# many reads
+samtools view $bam Chromosome:3506538-3507007 | wc -l
+done
+
+
 #### 2.2 some basic statistics
 ##########################################################
 
@@ -232,6 +252,126 @@ bcftools merge *.vcf.gz > pool.Varscan.vcf
 #rtg vcfsubset -i pool.Varscan.vcf -o pool_clean.Varscan.vcf --keep-format FREQ,PVAL -Z
 rm pool_clean.Varscan.vcf
 rtg vcfsubset -i pool.Varscan.vcf -o pool_clean.Varscan.vcf --keep-format FREQ -Z
+
+#-----------------------------------------------------------------------------------------
+#################### STEP E: Analyse des off-target (salmonella et serratia) ##############
+#-----------------------------------------------------------------------------------------
+
+for i in ../../1-CLEAN_DATA/15*_R1_001_val_1*; do
+echo $i
+indiv=$(basename $i | cut -f 1,2 -d _)
+echo $indiv
+#bwa mem /home/t-iris-005/0-RAW_DATA/References/Agy99.fa $i ${i/R1_001_val_1/R2_001_val_2} > ${indiv}.sam
+#bwa mem /home/t-iris-005/0-RAW_DATA/References/liflandii_128FXT.fa $i ${i/R1_001_val_1/R2_001_val_2} > ${indiv}.sam
+#bwa mem /home/t-iris-005/0-RAW_DATA/References/ATCC33728.fasta $i ${i/R1_001_val_1/R2_001_val_2} > ${indiv}.sam
+#bwa mem /home/t-iris-005/0-RAW_DATA/References/PlasmideCoreGenes.fasta $i ${i/R1_001_val_1/R2_001_val_2} > ${indiv}.sam
+#bwa mem /home/t-iris-005/0-RAW_DATA/References/IS2404-IS2606.fasta $i ${i/R1_001_val_1/R2_001_val_2} > ${indiv}.sam
+#bwa mem /home/t-iris-005/ENVIRO-MU-GENOME-2019/E-OFF_TARGET/salmonella_enterica.fasta $i ${i/R1_001_val_1/R2_001_val_2} > ${indiv}.sam
+bwa mem /home/t-iris-005/ENVIRO-MU-GENOME-2019/E-OFF_TARGET/serratia_liquefaciens.fasta $i ${i/R1_001_val_1/R2_001_val_2} > ${indiv}.sam
+# convert into .bam (less space used)
+BAM=${indiv}.bam
+samtools view -Sb ${indiv}.sam  > $BAM
+samtools sort ${indiv}.bam -o ${indiv}.sorted.bam
+samtools index ${indiv}.sorted.bam
+
+rm ${indiv}.sam ${indiv}.bam
+
+done
+
+
+
+#-----------------------------------------------------------------------------------------
+#################### STEP Cbis: IS2404 and IS2606 diversity with snakemake! ##############
+#-----------------------------------------------------------------------------------------
+
+# for a snakemake pipeline to work, I need 3 files 
+# 1. environment.yaml defines our environment of work for conda loading
+# 2. config.yaml defines the initial samples and some important parameters
+# 3. Snakefile defines all rules needed for our pipeline!
+
+cd Pipeline_IS2404-IS2606
+
+#############################################
+# PART1 creation de l'envrionnement et update
+#############################################
+
+# A ne faire qu'une fois
+# conda env create --name pipeline_IS2404-IS2606 --file environment.yaml
+# ensuite on peut faire des updates (moins long) quandon veut de nouveaux packages
+conda env update --name pipeline_IS2404-IS2606 --file environment.yaml
+# pour charger l'environnement
+conda activate pipeline_IS2404-IS2606
+# pour désactiver
+conda deactivate
+
+#############################################
+# PART2 lancement des snakmake
+#############################################
+
+# lancement sans execution
+snakemake -np 
+
+
+# création du diagramme
+snakemake --dag | dot -Tsvg > dag.svg
+
+# lancement classique
+snakemake --cores 8 # si vous n'avez pas défini de rule all, il faut mettre un nom de fichier (de sortie)
+
+#############################################
+# PART3 Préparation du dossier
+#############################################
+
+# on va ajouter les noms des fichiers à traiter ici
+# on souhaite avoir tous nos fichiers dans le dossier 0-RAW_DATA et sous la forme {sample}_R1.fastq.gz & {sample}_R2.fastq.gz 
+
+mkdir 0-RAW_DATA
+# on copie les fichiers
+ln -s /home/t-iris-005/0-RAW_DATA/B1815/*.fastq.gz  0-RAW_DATA/
+ln -s /home/t-iris-005/0-RAW_DATA/B1816/*.fastq.gz  0-RAW_DATA/
+rm 0-RAW_DATA/7*
+
+# on les renomme pour être sous la bonne forme [ probablement plus simple de faire les renommages manuellement!]
+for fastq in 0-RAW_DATA/*fastq.gz; do 
+    new_fastq=$(echo $fastq | sed 's/_001//' | sed 's/_S.*_/_B1815_/')
+    echo $fastq;
+    echo $new_fastq;
+    mv $fastq $new_fastq
+done
+
+list_samples=$(ls 0-RAW_DATA/*R1.fastq.gz | sed 's/_R1.fastq.gz/.varscan.vcf.gz.tbi/' | sed 's/0-RAW_DATA/4-VARSCAN/')
+snakemake $list_samples --cores 8
+snakemake $list_samples --dag | dot -Tsvg > dag.svg
+
+bcftools merge 4-VARSCAN/*.vcf.gz > 4-VARSCAN/pool.varscan.vcf
+rtg vcfsubset -i 4-VARSCAN/pool.varscan.vcf -o 4-VARSCAN/pool_clean.Varscan.vcf --keep-format FREQ -Z
+
+# TO DO ##
+# Comment gérer les sample avec un seul run de séquençage?
+
+
+
+#-----------------------------------------------------------------------------------------
+#################### STEP F Assembling with spades (meta) ##############
+#-----------------------------------------------------------------------------------------
+
+# launch on clean sample 1. Time:
+metaspades.py -o TEST -1 ../1-CLEAN_DATA/1_S1_R1_001_val_1.fq.gz -2 ../1-CLEAN_DATA/1_S1_R2_001_val_2.fq.gz
+metaspades.py -o 15_B1815_metaspades -1 ../1-CLEAN_DATA/15_S15_R1_001_val_1.fq.gz -2 ../1-CLEAN_DATA/15_S15_R2_001_val_2.fq.gz
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
