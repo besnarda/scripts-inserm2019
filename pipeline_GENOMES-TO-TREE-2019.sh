@@ -120,18 +120,20 @@ SAMPLE="/home/t-iris-005/A-GENOME_TO_TREE/0-RAW_DATA/SRR3224040_1.fastq.gz"
 OUTDIR="/home/t-iris-005/A-GENOME_TO_TREE/1-SNIPPY/SRR3224040"
 REF="/home/t-iris-005/0-RAW_DATA/References/Agy99_pMUM001_Hard_masked.gbff"
 # launch snippy
-/home/t-iris-005/SOFTWARE/snippy/bin/snippy --cpus 8 --outdir $OUTDIR --reference $REF --R1 $SAMPLE --R2 ${SAMPLE/_R1/_R2} 
+/home/t-iris-005/SOFTWARE/snippy/bin/snippy --cpus 8 --outdir $OUTDIR --reference $REF --R1 $SAMPLE --R2 ${SAMPLE/_R1/_R2}  --mincov 3
 
 ###### 1.2 to launch snippy for multiple data
 
 # A lancer dans le répertoire on l'on veut créer les fichiers.
-FILE_LIST=$(ls /home/t-iris-005/A-GENOME_TO_TREE/0-RAW_DATA/SRR322406*.fastq.gz)
+FILE_LIST=$(ls /home/t-iris-005/A-GENOME_TO_TREE/0-RAW_DATA/SR*.fastq.gz)
 for SAMPLE in $FILE_LIST; do
     echo $SAMPLE;
-    OUTDIR=$(basename $SAMPLE | sed 's/_1.fastq.gz//');
+    OUTDIR=$(basename $SAMPLE | sed 's/_R1.fastq.gz//');
     REF="/home/t-iris-005/0-RAW_DATA/References/Agy99_pMUM001_Hard_masked.gbff";   
     # launch snippy
-    /home/t-iris-005/SOFTWARE/snippy-3.2/bin/snippy --cpus 8 --outdir $OUTDIR --reference $REF --R1 $SAMPLE --R2 ${SAMPLE/_1/_2} ;
+    #/home/t-iris-005/SOFTWARE/snippy/bin/snippy --cpus 8 --outdir $OUTDIR --reference $REF --R1 $SAMPLE --R2 ${SAMPLE/_R1/_R2} ;
+    /home/t-iris-005/SOFTWARE/snippy/bin/snippy --cpus 8 --outdir $OUTDIR --reference $REF --se $SAMPLE;
+    #/home/t-iris-005/SOFTWARE/snippy/bin/snippy --cpus 8 --outdir $OUTDIR --reference $REF --R1 $SAMPLE --R2 ${SAMPLE/_R1/_R2} --mincov 3;
 done
 
 
@@ -153,13 +155,15 @@ done
 # !! you need to be in the folder you want the output !!
 
 # variables
-SNIPPY_FOLDERS_LIST=$(cat list_panel_70.txt)  # will give all sample folders previously done
+SNIPPY_FOLDERS_LIST=$(cat list_44_strains.txt)  # will give all sample folders previously done
 SNIPPY_FOLDERS_LIST=$(ls -d ../1-SNIPPY/*)
 REF="/home/t-iris-005/0-RAW_DATA/References/Agy99_pMUM001_Hard_masked.gbff"
-PREFIX="panel_70"
+PREFIX="44_strains"
 
 # launch snippy-core 3.2 (provide alignement but stats are bad!)
 /home/t-iris-005/SOFTWARE/snippy-3.2/bin/snippy-core --prefix $PREFIX  $SNIPPY_FOLDERS_LIST
+
+
 
 # launch snippy 4.3.8 (May 2019) don't work :( but provide nice stats like number of SNP to ref, missing snp...!
 /home/t-iris-005/SOFTWARE/snippy/bin/snippy-core --prefix $PREFIX  $SNIPPY_FOLDERS_LIST --ref $REF

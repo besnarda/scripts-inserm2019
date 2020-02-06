@@ -8,6 +8,7 @@
 library(ggtree)  # avaible with bioconductor
 library(ape)
 library(readxl)
+library(ggplot2)
 
 ####################################################
 ###### tree with old sequences (184)
@@ -191,10 +192,13 @@ tree_test <- drop.tip(tree,tip=outgroup)
 # plot with colour depending of Country
 pdf(file="/home/t-iris-005/A-GENOME_TO_TREE/4-R_PLOT/Benin_Nigeria_country.pdf")
 
+my_color_scale = c("red",'#1b9e77','#d95f02','#7570b3','#e7298a','#66a61e','#e6ab02','#a6761d','#666666',"darkgreen","blue")
+
 ggtree(tree_test) %<+% info +
   theme_tree2() +
   geom_tiplab(size=0.8,aes(label=Isolate.number)) +
-  geom_tippoint(size =0.5,aes(color=Country))+
+  geom_tippoint(size =0.5,aes(color=Cluster))+
+  scale_color_manual(values=my_color_scale,na.value="black")+
   theme(legend.position="right")
 
 dev.off()
@@ -255,5 +259,52 @@ ggtree(tree_test) %<+% info +
   geom_tippoint(aes(color=Div3))+
   theme(legend.position="right")
 
+####################################################
+###### tree with good only new sequences (janvier 2020)
+####################################################
 
-  
+tree <- read.tree("/home/t-iris-005/A-GENOME_TO_TREE/3-PHYML/224_strains_phylip_phyml_tree.txt")
+
+info <- read_xlsx("/home/t-iris-005/0-RAW_DATA/Summary_all_strains_2019.xlsx")
+info <- data.frame(info)
+info <- merge(data.frame(tree$tip.label),info,by.x="tree.tip.label",by.y="Run")
+
+outgroup = as.character(info[is.na(info$Lineage)==FALSE & info$Lineage == "Mu_A2","tree.tip.label"])
+tree <- root(tree,outgroup,resolve.root=T)
+tree_test <- drop.tip(tree,tip=outgroup)
+
+my_color_scale = c('#1b9e77','#d95f02','#7570b3','#e7298a','#66a61e','#e6ab02','#a6761d','#666666',"darkgreen","blue")
+
+ggtree(tree_test) %<+% info +
+  theme_tree2() +
+  geom_tiplab(size=2) +
+  geom_tippoint(aes(color=Cluster))+
+  theme(legend.position="right")+
+  scale_color_manual(values=my_color_scale,na.value="red")
+
+
+####################################################
+###### Subtree with Aguia Tayon and Helene Metonou
+####################################################
+
+tree <- read.tree("/home/t-iris-005/A-GENOME_TO_TREE/3-PHYML/44_strains_phylip_phyml_tree.txt")
+# ajout des deux échantillons des belges
+# tree <- read.tree("/home/t-iris-005/A-GENOME_TO_TREE/3-PHYML/46_strains_phylip_phyml_tree.txt")
+
+
+info <- read_xlsx("/home/t-iris-005/0-RAW_DATA/Summary_all_strains_2019.xlsx")
+info <- data.frame(info)
+info <- merge(data.frame(tree$tip.label),info,by.x="tree.tip.label",by.y="Run")
+
+outgroup = as.character(info[is.na(info$Lineage)==FALSE & info$Isolate.number == "Agy99","tree.tip.label"])
+tree <- root(tree,outgroup,resolve.root=T)
+tree_test <- drop.tip(tree,tip=outgroup)
+
+my_color_scale = c('#1b9e77','#d95f02','#7570b3','#e7298a','#66a61e','#e6ab02','#a6761d','#666666',"darkgreen","blue")
+
+ggtree(tree_test) %<+% info +
+  theme_tree2() +
+  geom_tiplab(size=4) +
+  geom_tippoint(aes(color=Cluster))+
+  theme(legend.position="right")+
+  scale_color_manual(values=my_color_scale,na.value="red")

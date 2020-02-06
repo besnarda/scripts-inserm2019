@@ -12,8 +12,9 @@
 #########################################################################################
 ########
 ########  0. Raw DATA
-########     0.1 symbolic links with the data
-########     0.2 checking data quality with fastqc 
+########     0.1 merging data
+########     0.2 symbolic links with the data
+########     0.3 checking data quality with fastqc 
 ########
 ########  1. cleaning adaptators and quality
 ########     1.1 cleaing with trimgalore
@@ -35,7 +36,19 @@
 #################### STEP 0: Raw data ########################
 #-----------------------------------------------------------------------------------------
 
-#### 0.1 importing data used for analysis
+#### 0.1 merging all files (they were in different files) and renaming
+##########################################################
+
+# need to be done in the data directory
+for R1 in *L001*R1*.gz; do
+indiv=$(echo $R1 | cut -f 1 -d _);
+echo $indiv
+R2=$(echo $R1 | sed 's/R1/R2/g')
+cat $R1 ${R1/L001/L002} ${R1/L001/L003} ${R1/L001/L004}> ${indiv}_R1.fastq.gz
+cat $R2 ${R2/L001/L002} ${R2/L001/L003} ${R2/L001/L004}> ${indiv}_R2.fastq.gz
+done
+
+#### 0.2 importing data used for analysis
 ##########################################################
 
 cd /home/t-iris-005/ENVIRO-MU-GENOME-2019
@@ -43,6 +56,8 @@ mkdir 0-RAW_DATA
 cd 0-RAW_DATA
 ln -s /home/t-iris-005/0-RAW_DATA/B1815/*.fastq.gz  .
 ln -s /home/t-iris-005/0-RAW_DATA/B1816/*.fastq.gz  .
+ln -s /home/t-iris-005/0-RAW_DATA/Capture_Dec2019/*.fastq.gz  .
+
 
 #### 0.2 checking quality of the data with FastQC
 ##########################################################
@@ -51,6 +66,7 @@ mkdir FASTQC
 for i in *1.fastq.gz; do
 /home/t-iris-005/SOFTWARE/FastQC/fastqc $i -o FASTQC
 done
+
 
 #-----------------------------------------------------------------------------------------
 #################### STEP 1: clean data ########################
@@ -65,7 +81,7 @@ done
 mkdir ../1-CLEAN_DATA
 cd ../1-CLEAN_DATA/
 
-for R1 in ../0-RAW_DATA/*B1816_R1_001.fastq.gz; do
+for R1 in ../0-RAW_DATA/*R1.fastq.gz; do
 R2=$(echo $R1 | sed 's/R1/R2/g')
 /home/t-iris-005/SOFTWARE/TrimGalore-0.6.1/trim_galore --paired $R1 $R2 -q 25;
 done
@@ -77,6 +93,19 @@ for i in *1.fq.gz; do
 /home/t-iris-005/SOFTWARE/FastQC/fastqc $i -o FASTQC
 donei
 
+
+#### 1.3 make a subset to analyse data faster
+############################################################
+
+size=1000000 # 1 million de reads
+for R1 in *R1_val_1.fq.gz; do
+R2=$(echo $R1 | sed 's/R1_val_1/R2_val_2/g')
+echo $R1
+echo $R2
+zcat $R1 | head -n $((size*2)) | gzip > subset$R1
+zcat $R2 | head -n $((size*2)) | gzip > subset$R2
+done
+
 #-----------------------------------------------------------------------------------------
 #################### STEP 2: mapping on reference ########################
 #-----------------------------------------------------------------------------------------
@@ -86,25 +115,25 @@ donei
 
 mkdir ../2-MAPPING
 cd ../2-MAPPING/
+ref="/home/t-iris-005/0-RAW_DATA/References/IS2404-IS2606.fasta"
+# ref="/home/t-iris-005/0-RAW_DATA/References/Agy99.fa"
+# ref="/home/t-iris-005/0-RAW_DATA/References/liflandii_128FXT.fa"
+# ref="/home/t-iris-005/0-RAW_DATA/References/ATCC33728.fasta"
+# ref="/home/t-iris-005/0-RAW_DATA/References/PlasmideCoreGenes.fasta"
+# ref="/home/t-iris-005/0-RAW_DATA/References/pseudoshottsii_JCM_15466.fasta"
 
-# le mapping a proprement parlé
-for i in ../../1-CLEAN_DATA/9*_R1_001_val_1*; do
+# le mapping a proprement parler
+for i in ../../1-CLEAN_DATA/*1.fq.gz; do
 echo $i
-indiv=$(basename $i | cut -f 1,2 -d _)
+indiv=$(basename $i | cut -f 1 -d _)
 echo $indiv
-#bwa mem /home/t-iris-005/0-RAW_DATA/References/Agy99.fa $i ${i/R1_001_val_1/R2_001_val_2} > ${indiv}.sam
-#bwa mem /home/t-iris-005/0-RAW_DATA/References/liflandii_128FXT.fa $i ${i/R1_001_val_1/R2_001_val_2} > ${indiv}.sam
-#bwa mem /home/t-iris-005/0-RAW_DATA/References/ATCC33728.fasta $i ${i/R1_001_val_1/R2_001_val_2} > ${indiv}.sam
-#bwa mem /home/t-iris-005/0-RAW_DATA/References/PlasmideCoreGenes.fasta $i ${i/R1_001_val_1/R2_001_val_2} > ${indiv}.sam
-bwa mem /home/t-iris-005/0-RAW_DATA/References/IS2404-IS2606.fasta $i ${i/R1_001_val_1/R2_001_val_2} > ${indiv}.sam
+
+bwa mem -t 8 $ref $i ${i/R1_val_1/R2_val_2} | samtools view -b -F 4 - > ${indiv}.bam
 
 # convert into .bam (less space used)
-BAM=${indiv}.bam
-samtools view -Sb ${indiv}.sam  > $BAM
-samtools sort ${indiv}.bam -o ${indiv}.sorted.bam
+samtools sort ${indiv}.bam > ${indiv}.sorted.bam
 samtools index ${indiv}.sorted.bam
-
-rm ${indiv}.sam ${indiv}.bam
+rm ${indiv}.bam
 
 done
 
@@ -132,6 +161,17 @@ samtools view $bam Chromosome:1092155-1092454 | wc -l
 # many reads
 samtools view $bam Chromosome:3506538-3507007 | wc -l
 done
+
+### filter reads with high quality mapping (less than 5 mismatch and more than 30 pb aligmement length)
+for bam in *.bam; do
+echo $bam
+samtools view $bam | cut -f 12 | cut -f 3 -d : > test.txt
+samtools view $bam | cut -f 9  > test2.txt
+paste test.txt test2.txt | awk '{if ($2 > 50 && $1/$2 < 0.07) print $1/$2}'  | wc -l
+rm test.txt test2.txt
+done
+
+
 
 
 #### 2.2 some basic statistics
@@ -247,12 +287,29 @@ rm ${indiv}.sam ${indiv}.bam ${indiv}.mpileup ${indiv}.sorted.bam
 done
 
 
-# merging (not functionning!!) need to use the vcf file and the % of allele
+# merging 
 bcftools merge *.vcf.gz > pool.Varscan.vcf
 #rtg vcfsubset -i pool.Varscan.vcf -o pool_clean.Varscan.vcf --keep-format FREQ,PVAL -Z
 rm pool_clean.Varscan.vcf
 rtg vcfsubset -i pool.Varscan.vcf -o pool_clean.Varscan.vcf --keep-format FREQ -Z
 
+################################################
+#### when bam is already done
+
+for bam in ../2-MAPPING/IS2404-IS2606/*.bam; do 
+
+echo $bam; 
+indiv=$(basename $bam | cut -f 1 -d .)
+samtools mpileup $bam -A --reference /home/t-iris-005/0-RAW_DATA/References/IS2404-IS2606.fasta  > ${indiv}.mpileup
+varscan mpileup2cns ${indiv}.mpileup --output-vcf --min-coverage 8 --min-avg-qual 15 --min-var-freq 0.01 --min-reads2 2 --strand-filter 0 --p-value 1 --variants > ${indiv}.Varscan.vcf
+
+sed -i "s/Sample1/${indiv}/g" ${indiv}.Varscan.vcf
+bgzip -c ${indiv}.Varscan.vcf > ${indiv}.Varscan.vcf.gz
+tabix -p vcf ${indiv}.Varscan.vcf.gz
+
+${indiv}.mpileup
+
+done
 #-----------------------------------------------------------------------------------------
 #################### STEP E: Analyse des off-target (salmonella et serratia) ##############
 #-----------------------------------------------------------------------------------------
@@ -277,89 +334,6 @@ samtools index ${indiv}.sorted.bam
 rm ${indiv}.sam ${indiv}.bam
 
 done
-
-
-
-#-----------------------------------------------------------------------------------------
-#################### STEP Cbis: IS2404 and IS2606 diversity with snakemake! ##############
-#-----------------------------------------------------------------------------------------
-
-# for a snakemake pipeline to work, I need 3 files 
-# 1. environment.yaml defines our environment of work for conda loading
-# 2. config.yaml defines the initial samples and some important parameters
-# 3. Snakefile defines all rules needed for our pipeline!
-
-cd Pipeline_IS2404-IS2606
-
-#############################################
-# PART1 creation de l'envrionnement et update
-#############################################
-
-# A ne faire qu'une fois
-# conda env create --name pipeline_IS2404-IS2606 --file environment.yaml
-# ensuite on peut faire des updates (moins long) quandon veut de nouveaux packages
-conda env update --name pipeline_IS2404-IS2606 --file environment.yaml
-# pour charger l'environnement
-conda activate pipeline_IS2404-IS2606
-# pour désactiver
-conda deactivate
-
-#############################################
-# PART2 lancement des snakmake
-#############################################
-
-# lancement sans execution
-snakemake -np 
-
-
-# création du diagramme
-snakemake --dag | dot -Tsvg > dag.svg
-
-# lancement classique
-snakemake --cores 8 # si vous n'avez pas défini de rule all, il faut mettre un nom de fichier (de sortie)
-
-#############################################
-# PART3 Préparation du dossier
-#############################################
-
-# on va ajouter les noms des fichiers à traiter ici
-# on souhaite avoir tous nos fichiers dans le dossier 0-RAW_DATA et sous la forme {sample}_R1.fastq.gz & {sample}_R2.fastq.gz 
-
-mkdir 0-RAW_DATA
-# on copie les fichiers
-ln -s /home/t-iris-005/0-RAW_DATA/B1815/*.fastq.gz  0-RAW_DATA/
-ln -s /home/t-iris-005/0-RAW_DATA/B1816/*.fastq.gz  0-RAW_DATA/
-rm 0-RAW_DATA/7*
-
-# on les renomme pour être sous la bonne forme [ probablement plus simple de faire les renommages manuellement!]
-for fastq in 0-RAW_DATA/*fastq.gz; do 
-    new_fastq=$(echo $fastq | sed 's/_001//' | sed 's/_S.*_/_B1815_/')
-    echo $fastq;
-    echo $new_fastq;
-    mv $fastq $new_fastq
-done
-
-list_samples=$(ls 0-RAW_DATA/*R1.fastq.gz | sed 's/_R1.fastq.gz/.varscan.vcf.gz.tbi/' | sed 's/0-RAW_DATA/4-VARSCAN/')
-snakemake $list_samples --cores 8
-snakemake $list_samples --dag | dot -Tsvg > dag.svg
-
-bcftools merge 4-VARSCAN/*.vcf.gz > 4-VARSCAN/pool.varscan.vcf
-rtg vcfsubset -i 4-VARSCAN/pool.varscan.vcf -o 4-VARSCAN/pool_clean.Varscan.vcf --keep-format FREQ -Z
-
-# TO DO ##
-# Comment gérer les sample avec un seul run de séquençage?
-
-
-
-#-----------------------------------------------------------------------------------------
-#################### STEP F Assembling with spades (meta) ##############
-#-----------------------------------------------------------------------------------------
-
-# launch on clean sample 1. Time:
-metaspades.py -o TEST -1 ../1-CLEAN_DATA/1_S1_R1_001_val_1.fq.gz -2 ../1-CLEAN_DATA/1_S1_R2_001_val_2.fq.gz
-metaspades.py -o 15_B1815_metaspades -1 ../1-CLEAN_DATA/15_S15_R1_001_val_1.fq.gz -2 ../1-CLEAN_DATA/15_S15_R2_001_val_2.fq.gz
-
-
 
 
 
