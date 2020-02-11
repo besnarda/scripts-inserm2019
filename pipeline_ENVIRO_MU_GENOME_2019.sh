@@ -229,6 +229,16 @@ REF="/home/t-iris-005/0-RAW_DATA/References/Agy99_pMUM001_Hard_masked.gbff"
 # launch snippy
 /home/t-iris-005/SOFTWARE/snippy/bin/snippy --cpus 8 --outdir $OUTDIR --reference $REF --R1 $SAMPLE --R2 ${SAMPLE/_R1_001_val_1/_R2_001_val_2} 
 
+## for every sample
+
+for SAMPLE in $(ls ../1-CLEAN_DATA/*1.fq.gz); do
+echo $SAMPLE
+REF="/home/t-iris-005/0-RAW_DATA/References/Agy99_pMUM001_Hard_masked.gbff"
+OUTDIR=$(basename $SAMPLE | cut -f1 -d_)
+# launch snippy
+/home/t-iris-005/SOFTWARE/snippy/bin/snippy --cpus 8 --outdir $OUTDIR --reference $REF --R1 $SAMPLE --R2 ${SAMPLE/_R1_val_1/_R2_val_2} --mincov 3;
+done
+
 
 
 #-----------------------------------------------------------------------------------------
