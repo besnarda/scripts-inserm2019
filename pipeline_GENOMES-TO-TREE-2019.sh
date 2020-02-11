@@ -25,8 +25,6 @@
 ###################
 ###################  04. Plotting with R
 ###################
-###################  05. some test with BEAST (time component)
-###################
 ##########################################################################################
 
 
@@ -147,11 +145,6 @@ done
 #################### STEP 02: Get Core SNP                        ########################
 #-----------------------------------------------------------------------------------------
 
-# step 0
-# je propose d'utiliser le fichier xlsx avec une colonne panel pour choisir le panel que l'on souhaite!
-
-
-
 # !! you need to be in the folder you want the output !!
 
 # variables
@@ -176,4 +169,17 @@ for tab in *tab; do cat $tab | cut -f 1,2 | sed 's/\t/_/g' | sed '1d' > ${tab}.S
 # compare SNP name between two files (nombre de SNP commun)
 comm -12 <(sort 179_strains_no_outgroup.tab.SNP) <(sort 202_strains_no_outgroup.tab.SNP) | wc -l
 
+
+## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ##
+ ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ##
+## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ##
+ ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ##
+## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ##
+
+#-----------------------------------------------------------------------------------------
+#################### STEP 03: phyml (arbre phylogénétique)         #######################
+#-----------------------------------------------------------------------------------------
+
+# On peut utiliser le site ATGC de Montpellier si data pas trop importante.
+# sinon, cluster en utilisant un script
 
