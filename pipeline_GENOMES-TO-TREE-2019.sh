@@ -183,3 +183,35 @@ comm -12 <(sort 179_strains_no_outgroup.tab.SNP) <(sort 202_strains_no_outgroup.
 # On peut utiliser le site ATGC de Montpellier si data pas trop importante.
 # sinon, cluster en utilisant un script
 
+## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ##
+ ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ##
+## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ##
+ ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ##
+## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ##
+
+#-----------------------------------------------------------------------------------------
+#################### STEP B: pipeline snakemake                    #######################
+#-----------------------------------------------------------------------------------------
+
+# First step is to install miniconda which will manage our environment.
+wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh
+bash Miniconda3-latest-Linux-x86_64.sh
+
+# We will create our working environement
+# for that we need a file that we call environment.yaml
+conda env create --name ulcerans_phylogenie --file environment.yaml
+
+# To activate the environment
+conda activate ulcerans_phylogenie
+# To remove environment
+## conda deactivate
+
+# then we need a snakemake file, it is mandatory for snakemake and contain all steps in our process.
+# dry-run with -n option
+snakemake -n --snakefile ulcerans_phylogenie.rules data/ref/Agy99_copy.fa
+snakemake --snakefile ulcerans_phylogenie.rules data/ref/Agy99_copy.fa
+
+
+# testing my R script
+Rscript /home/t-iris-005/scripts-inserm2019/snakemake_plot_phyml_tree.R "phyml/phyml_tree.txt" "data/summary_strains.xlsx" "data/outgroup.csv"
+
