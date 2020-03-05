@@ -7,7 +7,7 @@ library(ggforce)
 
 #data <- read.csv("0-RAW_DATA/Fichier_bilan_souches.csv",dec=",")
 data <- read_xlsx("/home/t-iris-005/0-RAW_DATA/Summary_all_strains_2019.xlsx")
-register_google(key = "AIzaSyC0aNyGZX5ZZRzfEI8ybIjz5Do1--lkweE")
+register_google(key = "")
 
 summary(data)
 data$Latitude <- as.numeric(data$Latitude)
